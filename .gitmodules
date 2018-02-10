@@ -1,0 +1,3 @@
+[submodule "iksemel"]
+	path = iksemel
+	url = https://github.com/widelec-BB/iksemel
