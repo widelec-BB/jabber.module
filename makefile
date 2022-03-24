@@ -41,6 +41,8 @@ LIBS   = -Liksemel -liksemel -labox -lvstring
 
 LINK   = $(LD) $(TARGET) $(LWARNS) $(LDEFS) $(LFLAGS)
 
+.PHONY: install
+
 # target 'all' (default target)
 all: $(PROJECT)
 	@$(TARGET_DONE)
@@ -111,4 +113,9 @@ dist: all
 	@strip --strip-unneeded --remove-section .comment RAM:$(OUTFILE)/modules/$(OUTFILE) >NIL:
 	@find RAM:$(OUTFILE) -name .svn -printf "\"%p\"\n" | xargs rm -rf
 	@MOSSYS:C/LHa a -r -a RAM:$(OUTFILE).lha RAM:$(OUTFILE)/ >NIL:
+	@$(TARGET_DONE)
+
+install:
+	@copy bin/jabber.module SYS:Applications/KwaKwa/modules/ >NIL:
+	@avail flush
 	@$(TARGET_DONE)
