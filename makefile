@@ -41,13 +41,8 @@ LIBS   = -Liksemel -liksemel -labox -lvstring
 
 LINK   = $(LD) $(TARGET) $(LWARNS) $(LDEFS) $(LFLAGS)
 
-# subdirectories #
-DIRS = iksemel
-BUILDDIRS = $(DIRS:%=build-%)
-CLEANDIRS = $(DIRS:%=clean-%)
-
 # target 'all' (default target)
-all: $(BUILDDIRS) $(PROJECT)
+all: $(PROJECT)
 	@$(TARGET_DONE)
 
 # target 'compiler' (compile target)
@@ -83,20 +78,21 @@ OBJS = $(OBJDIR)lib.c.o $(OBJDIR)class.c.o $(OBJDIR)gui.c.o $(OBJDIR)locale.c.o 
  $(OBJDIR)support.c.o
 
 # link all file(s)
-$(PROJECT): $(OBJS)
+$(PROJECT): $(OBJS) iksemel/libiksemel.a
 	@$(LINKING)
 	@$(LINK) $(OBJS) -o $(PROJECT) $(LIBS)
 
 # any other targets
 
-iksemel:
+iksemel/libiksemel.a: iksemel/*.c iksemel/*.h
 	$(MAKE) -C iksemel
 
 strip:
 	@strip --strip-unneeded --remove-section=.comment $(PROJECT)
 	@$(TARGET_DONE)
 
-clean: $(CLEANDIRS)
+clean:
+	@make -C iksemel clean
 	@-rm $(PROJECT)
 	@-rm $(OBJDIR)*.o
 	@$(TARGET_DONE)
@@ -116,13 +112,3 @@ dist: all
 	@find RAM:$(OUTFILE) -name .svn -printf "\"%p\"\n" | xargs rm -rf
 	@MOSSYS:C/LHa a -r -a RAM:$(OUTFILE).lha RAM:$(OUTFILE)/ >NIL:
 	@$(TARGET_DONE)
-
-$(BUILDDIRS):
-	@$(MAKE) -C $(@:build-%=%)
-
-$(CLEANDIRS): 
-	@$(MAKE) -C $(@:clean-%=%) clean
-
-.PHONY: subdirs $(DIRS)
-.PHONY: subdirs $(BUILDDIRS)
-.PHONY: subdirs $(CLEANDIRS)
