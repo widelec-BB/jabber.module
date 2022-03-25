@@ -6,6 +6,14 @@
 COMPILE_FILE=printf "\033[K\033[0;33mCompiling \033[1;33m$<\033[0;33m...\033[0m\n"
 TARGET_DONE=printf "\033[K\033[0;32mTarget \"$@\" successfully done.\033[0m\n"
 LINKING=printf "\033[K\033[1;34mLinking project \"$@\"... \033[0m\n"
+NOTMORPHOS=printf "\033[K\033[1;91mTarget \"$@\" is not supported in non-MorphOS enviroment. \033[0m\n"
+
+# VARIABLES #
+OS = $(shell uname -s)
+NIL = /dev/null 2>&1
+ifeq ($(OS),MorphOS)
+	NIL = NIL:
+endif
 
 # PROJECT #
 # paths are relative to the project directory (current directory during make)
@@ -41,7 +49,7 @@ LIBS   = -Liksemel -liksemel -labox -lvstring
 
 LINK   = $(LD) $(TARGET) $(LWARNS) $(LDEFS) $(LFLAGS)
 
-.PHONY: install
+.PHONY: all clean strip dump install
 
 # target 'all' (default target)
 all: $(PROJECT)
@@ -86,6 +94,14 @@ $(PROJECT): $(OBJS) iksemel/libiksemel.a
 
 # any other targets
 
+translations.h: locale/$(OUTFILE).cs
+ifeq ($(OS),MorphOS)
+	MakeDir ALL $(OUTDIR)catalogs/polski
+	SimpleCat locale/$(OUTFILE).cs
+else
+	@$(NOTMORPHOS)
+endif
+
 iksemel/libiksemel.a: iksemel/*.c iksemel/*.h
 	$(MAKE) -C iksemel
 
@@ -94,6 +110,9 @@ strip:
 	@$(TARGET_DONE)
 
 clean:
+ifeq ($(OS),MorphOS)
+	@-rm -rf translations.h $(OUTDIR)catalogs
+endif
 	@make -C iksemel clean
 	@-rm $(PROJECT)
 	@-rm $(OBJDIR)*.o
@@ -104,6 +123,7 @@ dump:
 	@$(TARGET_DONE)
 
 dist: all
+ifeq ($(OS),MorphOS)
 	@rm -rf RAM:$(OUTFILE) RAM:$(OUTFILE).lha
 	@mkdir RAM:$(OUTFILE) >NIL:
 	@mkdir RAM:$(OUTFILE)/modules >NIL:
@@ -114,8 +134,16 @@ dist: all
 	@find RAM:$(OUTFILE) -name .svn -printf "\"%p\"\n" | xargs rm -rf
 	@MOSSYS:C/LHa a -r -a RAM:$(OUTFILE).lha RAM:$(OUTFILE)/ >NIL:
 	@$(TARGET_DONE)
+else
+	@$(NOTMORPHOS)
+endif
 
 install:
+ifeq ($(OS),MorphOS)
 	@copy bin/jabber.module SYS:Applications/KwaKwa/modules/ >NIL:
+	@copy ALL bin/catalogs/ SYS:Applications/KwaKwa/catalogs/ >NIL:
 	@avail flush
 	@$(TARGET_DONE)
+else
+	@$(NOTMORPHOS)
+endif

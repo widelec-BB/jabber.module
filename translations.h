@@ -1,9 +1,3 @@
-/*
- * Copyright (c) 2014 - 2018 Filip "widelec" Maryjanski, BlaBla group.
- * All rights reserved.
- * Distributed under the terms of the GNU Lesser General Public License v2.1.
- */
-
 #ifndef TRANSLATIONS_H
 #define TRANSLATIONS_H 1
 
@@ -12,7 +6,7 @@
  * Automatically created by SimpleCat V3
  * Do NOT edit by hand!
  *
- * SimpleCat ©1992-2012 Guido Mersmann
+ * SimpleCat ©1992-2015 Guido Mersmann
  *
  */
 
