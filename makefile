@@ -21,7 +21,7 @@ PROJECT = $(OUTDIR)$(OUTFILE)
 KWAKWAAPI = ../kwakwa
 
 # COMPILER #
-CC = ppc-morphos-gcc
+CC = ppc-morphos-gcc-11
 CWARNS = -Wall -Wno-pointer-sign
 CDEFS  = -DUSE_INLINE_STDARG -D__NOLIBBASE__ -D__AMIGADATE__=\"\ \($(shell date "+%d.%m.%Y")\)\ \" -DAROS_ALMOST_COMPATIBLE
 # -D__DEBUG__
@@ -31,7 +31,7 @@ CLIBS  = -I$(KWAKWAAPI)
 COMPILE = $(CC) $(TARGET) $(CWARNS) $(CDEFS) $(CFLAGS) $(CLIBS)
 
 # LINKER #
-LD = ppc-morphos-gcc
+LD = ppc-morphos-gcc-11
 
 LWARNS =
 LDEFS  =

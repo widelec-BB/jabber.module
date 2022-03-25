@@ -45,7 +45,7 @@ LONG dummy_function(void)
 	return -1;
 }
 
-__attribute__ ((section(".text"))) const char VTag[] = VERSTAG;
+__attribute__ ((section(".text.consts"))) const char VTag[] = VERSTAG;
 
 
 Class* InitClass(struct ClassBase *cb)

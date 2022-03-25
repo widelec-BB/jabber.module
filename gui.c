@@ -20,7 +20,6 @@ Object* MUI_NewObjectM(char *classname, ...)
 	va_list args, args2;
 	LONG argc = 0;
 	ULONG tag;
-	IPTR val;
 	Object *result = NULL;
 
 	__va_copy(args2, args);
@@ -29,7 +28,7 @@ Object* MUI_NewObjectM(char *classname, ...)
 
 	while((tag = va_arg(args, ULONG)) != TAG_END)
 	{
-		val = va_arg(args, IPTR);
+		va_arg(args, IPTR);
 		argc++;
 	}
 
@@ -56,7 +55,6 @@ Object* MUI_NewObjectM(char *classname, ...)
 	}
 	return result;
 }
-
 
 static inline Object* StringLabel(STRPTR label, STRPTR preparse)
 {
