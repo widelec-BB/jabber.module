@@ -1,4 +1,4 @@
-## Version $VER: jabber.module.catalog 1.0 (19.04.2013)
+## Version $VER: jabber.module.catalog 2.0 (25.03.2022)
 ## Languages english polski
 ## Codeset english 0
 ## Codeset polski 0
@@ -52,4 +52,20 @@ Port:
 MSG_PREFS_CONNECTION_PORT_HELP
 Server's port you want connect to.
 Port serwera, na którym chcesz siê po³±czyæ.
+;
+MSG_MENU_DEBUGLOG_OPEN
+Debug Log...
+Konsola debugowania...
+;
+MSG_DEBUGLOG_WINDOW_TITLE
+KwaKwa: Jabber Debug Log
+KwaKwa: Konsola debugowania Jabbera
+;
+MSG_DEBUGLOG_WINDOW_LEGEND_OUTGOING
+Outgoing Data
+Dane wychodz±ce
+;
+MSG_DEBUGLOG_WINDOW_LEGEND_INCOMING
+Incoming Data
+Dane przychodz±ce
 ;

@@ -8,9 +8,6 @@
 #define __IKSHOOKS_H__
 
 int StreamHook(void *user_data, int type, iks *node);
-
-#ifdef __DEBUG__
 void DebugHook(void *user_data, const char *data, size_t size, int is_incoming);
-#endif /* __DEBUG__ */
 
 #endif /* __IKSHOOKS_H__ */

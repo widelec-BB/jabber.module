@@ -71,7 +71,7 @@ BOOL InitResources(struct ClassBase *cb)
 	if(!(MUIMasterBase = OpenLibrary("muimaster.library", 20))) return FALSE;
 	if(!(MultimediaBase = OpenLibrary("multimedia/multimedia.class", 53))) return FALSE;
 	if(!(LocaleBase = OpenLibrary("locale.library", 51))) return FALSE;
-	Locale_Open(CLASSNAME".catalog", 1, 0);
+	Locale_Open(CLASSNAME".catalog", 2, 0);
 	if(!(InitClass(cb))) return FALSE;
 	return TRUE;
 }

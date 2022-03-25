@@ -7,6 +7,7 @@
 #include <clib/alib_protos.h>
 #include <kwakwa_api/protocol.h>
 #include <libvstring.h>
+#include <mui/PowerTerm_mcc.h>
 #include "iksemel/iksemel.h"
 #include "class.h"
 #include "gui.h"
@@ -62,19 +63,29 @@ static IPTR mNew(Class *cl, Object *obj, struct opSet *msg)
 
 							if(avatars_dir || amake_res)
 							{
-								d->State = STATE_NOT_CONNECTED;
+								Object *debuglog_window, *debuglog_menu_item;
+								if((debuglog_window = CreateDebugLogWindow(&d->DebugLog, &debuglog_menu_item)))
+								{
+									d->State = STATE_NOT_CONNECTED;
 
-								d->GuiTagList[0].ti_Tag = KWAG_PrefsPage;
-								d->GuiTagList[0].ti_Data = (IPTR)d->PrefsPanel;
+									d->GuiTagList[0].ti_Tag = KWAG_PrefsPage;
+									d->GuiTagList[0].ti_Data = (IPTR)d->PrefsPanel;
 
-								d->GuiTagList[1].ti_Tag = KWAG_PrefsEntry;
-								d->GuiTagList[1].ti_Data = (IPTR)PROTOCOL_NAME;
+									d->GuiTagList[1].ti_Tag = KWAG_PrefsEntry;
+									d->GuiTagList[1].ti_Data = (IPTR)PROTOCOL_NAME;
 
-								d->GuiTagList[2].ti_Tag = TAG_END;
-								d->GuiTagList[2].ti_Data = (IPTR)NULL;
+									d->GuiTagList[2].ti_Tag = KWAG_Window;
+									d->GuiTagList[2].ti_Data = (IPTR)debuglog_window;
 
-								LEAVE();
-								return (IPTR)obj;
+									d->GuiTagList[3].ti_Tag = KWAG_ToolsEntry;
+									d->GuiTagList[3].ti_Data = (IPTR)debuglog_menu_item;
+
+									d->GuiTagList[4].ti_Tag = TAG_END;
+									d->GuiTagList[4].ti_Data = (IPTR)NULL;
+
+									LEAVE();
+									return (IPTR)obj;
+								}
 							}
 						}
 					}
@@ -119,6 +130,10 @@ static IPTR mDispose(Class *cl, Object *obj, Msg msg)
 		StrFree(d->DescriptionOnConnect);
 		d->DescriptionOnConnect = NULL; /* memory freed, ptr no longer valid */
 	}
+
+#ifdef __DEBUG__
+	DoMethod(d->DebugLog, MUIM_PowerTerm_SaveStyle, (IPTR)"RAM:jabber.module.log");
+#endif /* __DEBUG__ */
 
 	if(CyaSSLBase)
 		CloseLibrary(CyaSSLBase);
@@ -190,9 +205,7 @@ static IPTR mConnect(Class *cl, Object *obj, struct KWAP_Connect *msg)
 				LONG port = -1;
 				STRPTR server = NULL;
 
-#ifdef __DEBUG__
 				iks_set_log_hook(d->StreamParser, DebugHook);
-#endif /* __DEBUG */
 
 				if(!d->Id->resource)
 					d->Id->resource = "KwaKwa";

@@ -32,7 +32,8 @@ struct ObjData
 {
 	Object *App;
 	Object *PrefsPanel;
-	struct TagItem GuiTagList[3];
+	Object *DebugLog;
+	struct TagItem GuiTagList[5];
 	struct MinList EventsList;
 	struct MinList VCardList;
 	iksparser *StreamParser;

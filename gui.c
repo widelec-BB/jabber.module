@@ -6,6 +6,7 @@
 
 #include <proto/muimaster.h>
 #include <proto/alib.h>
+#include <mui/PowerTerm_mcc.h>
 #include "globaldefines.h"
 #include "gui.h"
 #include "locale.h"
@@ -174,7 +175,7 @@ Object *CreatePrefsPage(VOID)
 				MUIA_Group_Child, (IPTR)EmptyRectangle(100),
 			TAG_END),
 
-			MUIA_Group_Child, (IPTR)(adv_group = MUI_NewObject(MUIC_Group,
+			MUIA_Group_Child, (IPTR)(adv_group = MUI_NewObjectM(MUIC_Group,
 				MUIA_Disabled, TRUE,
 				MUIA_Group_Child, (IPTR)MUI_NewObjectM(MUIC_Group,
 					MUIA_Group_Horiz, TRUE,
@@ -220,4 +221,69 @@ Object *CreatePrefsPage(VOID)
 
 	LEAVE();
 	return result;
+}
+
+Object *CreateDebugLogWindow(Object **term, Object **menu_item)
+{
+	Object *window, *scroll;
+	ENTER();
+
+	*menu_item = MUI_NewObjectM(MUIC_Menuitem,
+		MUIA_Menuitem_Title, (IPTR)GetString(MSG_MENU_DEBUGLOG_OPEN),
+	TAG_END);
+
+	if(!menu_item)
+		return NULL;
+
+	window = MUI_NewObjectM(MUIC_Window,
+		MUIA_Background, MUII_GroupBack,
+		MUIA_Window_ID, USD_DEBUGLOG_WINDOW,
+		MUIA_UserData, USD_DEBUGLOG_WINDOW,
+		MUIA_Window_Title, (IPTR)GetString(MSG_DEBUGLOG_WINDOW_TITLE),
+		MUIA_Window_UseRightBorderScroller, TRUE,
+		MUIA_Window_RootObject, MUI_NewObjectM(MUIC_Group,
+			MUIA_Background, MUII_GroupBack,
+			MUIA_Frame, MUIV_Frame_Group,
+			MUIA_Group_Child, MUI_NewObjectM(MUIC_Group,
+				MUIA_Group_Horiz, TRUE,
+				MUIA_Group_Child, MUI_NewObjectM(MUIC_Text,
+					MUIA_Text_Contents, (IPTR)GetString(MSG_DEBUGLOG_WINDOW_LEGEND_OUTGOING),
+					MUIA_Text_PreParse, "\33P[FF0000]\33l",
+				TAG_END),
+				MUIA_Group_Child, EmptyRectangle(100),
+				MUIA_Group_Child, MUI_NewObjectM(MUIC_Text,
+					MUIA_Text_Contents, (IPTR)GetString(MSG_DEBUGLOG_WINDOW_LEGEND_INCOMING),
+					MUIA_Text_PreParse, "\33P[00FF00]\33r",
+				TAG_END),
+			TAG_END),
+			MUIA_Group_Child, (scroll = MUI_NewObjectM(MUIC_Scrollgroup,
+				MUIA_Scrollgroup_FreeHoriz, FALSE,
+				MUIA_Scrollgroup_UseWinBorder, TRUE,
+				MUIA_Scrollgroup_Contents, (IPTR)(*term = MUI_NewObjectM(MUIC_PowerTerm,
+					MUIA_PowerTerm_UTFEnable, TRUE,
+					MUIA_PowerTerm_Wrap, TRUE,
+					MUIA_PowerTerm_OutEnable, FALSE,
+					MUIA_PowerTerm_ResizableHistory, TRUE,
+					MUIA_PowerTerm_EatAllInput, FALSE,
+					MUIA_PowerTerm_Emulation, MUIV_PowerTerm_Emulation_ANSI,
+				TAG_END)),
+			TAG_END)),
+		TAG_END),
+	TAG_END);
+
+	if(!window)
+	{
+		MUI_DisposeObject(*menu_item);
+		return NULL;
+	}
+
+	set(*term, MUIA_PowerTerm_Scroller, (IPTR)scroll);
+
+	DoMethod(*menu_item, MUIM_Notify, MUIA_Menuitem_Trigger, MUIV_EveryTime, (IPTR)window, 3,
+	 MUIM_Set, MUIA_Window_Open, TRUE);
+	DoMethod(window, MUIM_Notify, MUIA_Window_CloseRequest, TRUE, (IPTR)window, 3,
+	 MUIM_Set, MUIA_Window_Open, FALSE);
+
+	LEAVE();
+	return window;
 }

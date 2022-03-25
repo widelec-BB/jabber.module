@@ -6,6 +6,7 @@
 
 #include <exec/lists.h>
 #include <libvstring.h>
+#include <mui/PowerTerm_mcc.h>
 #include "iksemel/iksemel.h"
 #include "support.h"
 #include "globaldefines.h"
@@ -294,23 +295,20 @@ int StreamHook(void *user_data, int type, iks *node)
 	return IKS_OK;
 }
 
-
-#ifdef __DEBUG__
 void DebugHook(void *user_data, const char *data, size_t size, int is_incoming)
 {
 	struct ObjData *d = (struct ObjData*)user_data;
+	const STRPTR red = "\e[0;31m";
+	const STRPTR green = "\e[0;32m";
+	const STRPTR end = "\n\r\e[0m";
 
 	if(is_incoming)
-	{
-		tprintf("Recived XML:\n");
-		AddErrorEvent(&d->EventsList, ERRNO_ONLY_MESSAGE, "Recived XML:");
-	}
+		DoMethod(d->DebugLog, MUIM_PowerTerm_Write, (IPTR)green, StrLen(green));
 	else
-	{
-		tprintf("Send XML:\n");
-		AddErrorEvent(&d->EventsList, ERRNO_ONLY_MESSAGE, "Send XML:");
-	}
-	tprintf("%ls\n", data);
+		DoMethod(d->DebugLog, MUIM_PowerTerm_Write, (IPTR)red, StrLen(red));
+
+	DoMethod(d->DebugLog, MUIM_PowerTerm_Write, (IPTR)data, size);
+	DoMethod(d->DebugLog, MUIM_PowerTerm_Write, (IPTR)end, StrLen(end));
+
 	AddErrorEvent(&d->EventsList, ERRNO_ONLY_MESSAGE, (STRPTR)data);
 }
-#endif /* __DEBUG__ */

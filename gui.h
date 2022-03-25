@@ -21,10 +21,15 @@
 #define USD_PREFS_CONNECTION_ADVANCED        MAKE_ID(0x00000002)
 #define USD_PREFS_CONNECTION_SERVER          MAKE_ID(0x00000003)
 #define USD_PREFS_CONNECTION_PORT            MAKE_ID(0x00000004)
+/* jabber debug log window */
+#define USD_DEBUGLOG_WINDOW                  MAKE_ID(0x00001000)
 
 extern struct Library *IntuitionBase;
 
+Object* MUI_NewObjectM(char *, ...);
 Object *CreatePrefsPage(VOID);
+Object *CreateDebugLogWindow(Object **, Object **);
+
 #define findobj(id, parent) (Object*)DoMethod(parent, MUIM_FindUData, id)
 
 static inline ULONG xget(Object *obj, ULONG att)
