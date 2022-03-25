@@ -30,14 +30,6 @@ VOID HandleFeatures(struct ObjData *d, int features, iks *node)
 				{
 					iks_send(d->StreamParser, t);
 					iks_delete(t);
-				}
-			}
-			if(features & IKS_STREAM_SESSION)
-			{
-				if((t = iks_make_session()))
-				{
-					iks_send(d->StreamParser, t);
-					iks_delete(t);
 					d->State = STATE_CONNECTED;
 					AddEvent(&d->EventsList, KE_TYPE_CONNECT);
 				}
@@ -269,8 +261,6 @@ int StreamHook(void *user_data, int type, iks *node)
 	{
 		case IKS_NODE_START:
 			AddErrorEvent(&d->EventsList, ERRNO_ONLY_MESSAGE, "XML stream started");
-			if(!iks_is_secure(d->StreamParser))
-				iks_start_tls(d->StreamParser);
 		break;
 
 		case IKS_NODE_STOP:
@@ -283,9 +273,19 @@ int StreamHook(void *user_data, int type, iks *node)
 
 		case IKS_NODE_NORMAL:
 			if(iks_strcmp("stream:features", iks_name(node)) == 0)
+			{
 				features = iks_stream_features(node);
-			if(!iks_is_secure(d->StreamParser))
-				break;
+				if(!iks_is_secure(d->StreamParser) && (features & IKS_STREAM_STARTTLS))
+				{
+					int start_tls_res = iks_start_tls(d->StreamParser);
+					if(start_tls_res != IKS_OK)
+						return start_tls_res;
+
+					d->State = STATE_CONNECTING;
+					d->WantWrite = TRUE;
+					return IKS_OK;
+				}
+			}
 			if(d->State == STATE_AFTER_HEADER)
 				HandleFeatures(d, features, node);
 			if(d->State == STATE_CONNECTED)
