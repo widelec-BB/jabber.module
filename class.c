@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 - 2018 Filip "widelec" Maryjanski, BlaBla group.
+ * Copyright (c) 2014 - 2022 Filip "widelec" Maryjanski, BlaBla group.
  * All rights reserved.
  * Distributed under the terms of the GNU Lesser General Public License v2.1.
  */

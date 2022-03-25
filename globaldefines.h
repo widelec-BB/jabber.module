@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 - 2018 Filip "widelec" Maryjanski, BlaBla group.
+ * Copyright (c) 2014 - 2022 Filip "widelec" Maryjanski, BlaBla group.
  * All rights reserved.
  * Distributed under the terms of the GNU Lesser General Public License v2.1.
  */
@@ -9,12 +9,12 @@
 
 #define CLASSNAME "jabber.module"
 #define VERSION 1
-#define REVISION 2
+#define REVISION 3
 #define DATE __AMIGADATE__
-#define VERS "jabber.module 1.2"
+#define VERS "jabber.module 1.3"
 #define AUTHOR "Filip \"widelec\" Maryjañski"
 #define DESC "Jabber Module for KwaKwa"
-#define COPYRIGHT "© " "2014 - 2018" " " AUTHOR
+#define COPYRIGHT "© " "2014 - 2022" " " AUTHOR
 #define VSTRING VERS DATE COPYRIGHT
 #define VERSTAG "\0$VER: " VSTRING
 #define RELEASE_TAG "F1"
