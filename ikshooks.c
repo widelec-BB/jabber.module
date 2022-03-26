@@ -309,6 +309,4 @@ void DebugHook(void *user_data, const char *data, size_t size, int is_incoming)
 
 	DoMethod(d->DebugLog, MUIM_PowerTerm_Write, (IPTR)data, size);
 	DoMethod(d->DebugLog, MUIM_PowerTerm_Write, (IPTR)end, StrLen(end));
-
-	AddErrorEvent(&d->EventsList, ERRNO_ONLY_MESSAGE, (STRPTR)data);
 }
