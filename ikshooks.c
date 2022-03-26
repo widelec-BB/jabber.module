@@ -16,50 +16,6 @@
 
 extern struct Library *SysBase, *DOSBase;
 
-VOID HandleFeatures(struct ObjData *d, int features, iks *node)
-{
-	if(features)
-	{
-		if(d->Authorized)
-		{
-			iks *t;
-
-			if(features & IKS_STREAM_BIND)
-			{
-				if((t = iks_make_resource_bind(d->Id)))
-				{
-					iks_send(d->StreamParser, t);
-					iks_delete(t);
-					d->State = STATE_CONNECTED;
-					AddEvent(&d->EventsList, KE_TYPE_CONNECT);
-				}
-			}
-		}
-		else
-		{
-			STRPTR pass = (STRPTR)xget(findobj(USD_PREFS_BASIC_PASS_STRING, d->PrefsPanel), MUIA_String_Contents);
-
-			if(pass)
-			{
-				if(features & IKS_STREAM_SASL_MD5)
-					iks_start_sasl(d->StreamParser, IKS_SASL_DIGEST_MD5, d->Id->user, pass);
-				else if(features & IKS_STREAM_SASL_PLAIN)
-					iks_start_sasl(d->StreamParser, IKS_SASL_PLAIN, d->Id->user, pass);
-			}
-		}
-	}
-	else if(iks_strcmp("failure", iks_name(node)) == 0)
-	{
-		d->Authorized = FALSE;
-		AddErrorEvent(&d->EventsList, ERRNO_LOGIN_FAILED, iks_name(node));
-	}
-	else if(iks_strcmp("success", iks_name(node)) == 0)
-	{
-		d->Authorized = TRUE;
-		iks_send_header(d->StreamParser, d->Id->server);
-	}
-}
-
 static VOID HandlePresence(struct ObjData *d, ikspak *pac)
 {
 	iks *x;
@@ -113,110 +69,106 @@ static VOID HandlePresence(struct ObjData *d, ikspak *pac)
 	LEAVE();
 }
 
-VOID HandleIq(struct ObjData *d, ikspak *pac)
+VOID HandleIqResult(struct ObjData *d, ikspak *pac)
 {
-	if(pac->subtype == IKS_TYPE_RESULT)
+	if(iks_strcmp(pac->id, "roster") == 0) /* list import */
+		AddEventImportList(&d->EventsList, pac);
+
+	if(iks_strcmp(pac->id, "vc2") == 0) /* vCard Data, contains avatar */
 	{
-		tprintf("pac->id == %ls\n", pac->id);
+		iks *card;
 
-		if(iks_strcmp(pac->id, "roster") == 0) /* list import */
-			AddEventImportList(&d->EventsList, pac);
-
-		if(iks_strcmp(pac->id, "vc2") == 0) /* vCard Data, contains avatar */
+		if((card = iks_find(pac->x, "vCard")))
 		{
-			iks *card;
+			struct VCardListNode *vc;
+			iks *photo;
 
-			if((card = iks_find(pac->x, "vCard")))
+			ForeachNode(&d->VCardList, vc)
 			{
-				struct VCardListNode *vc;
-				iks *photo;
-
-				ForeachNode(&d->VCardList, vc)
+				if(StrEqu(pac->from->partial, vc->Id))
 				{
-					if(StrEqu(pac->from->partial, vc->Id))
+					struct ContactEntry *e;
+
+					if((e = AllocVec(sizeof(struct ContactEntry), MEMF_ANY | MEMF_CLEAR)))
 					{
-						struct ContactEntry *e;
+						char *fn;
 
-						if((e = AllocVec(sizeof(struct ContactEntry), MEMF_ANY | MEMF_CLEAR)))
+						e->entryid = StrNew(vc->Id);
+
+						if((fn = iks_find_cdata(card, "FN")))
 						{
-							char *fn;
+							ULONG space = StrLen(fn);
 
-							e->entryid = StrNew(vc->Id);
+							while(fn[space] != ' ' && space--);
 
-							if((fn = iks_find_cdata(card, "FN")))
+							if(space != 0)
 							{
-								ULONG space = StrLen(fn);
-
-								while(fn[space] != ' ' && space--);
-
-								if(space != 0)
-								{
-									e->lastname = StrNew(&fn[space+1]);
-									fn[space] = '\0';
-								}
-								e->firstname = StrNew(fn);
-								fn[space] = ' ';
+								e->lastname = StrNew(&fn[space+1]);
+								fn[space] = '\0';
 							}
-							if((fn = iks_find_cdata(card, "NICKNAME")))
-								e->nickname = StrNew(fn);
-
-							if((fn = iks_find_cdata(card, "BDAY")))
-								e->birthyear = StrNew(fn);
-
-							DoMethod(d->App, MUIM_Application_PushMethod, (IPTR)vc->Obj, 2, vc->Method, (IPTR)e);
+							e->firstname = StrNew(fn);
+							fn[space] = ' ';
 						}
+						if((fn = iks_find_cdata(card, "NICKNAME")))
+							e->nickname = StrNew(fn);
 
-						Remove((struct Node*)vc);
-						FreeVec(vc->Id);
-						FreeMem(vc, sizeof(struct VCardListNode));
-						break;
+						if((fn = iks_find_cdata(card, "BDAY")))
+							e->birthyear = StrNew(fn);
+
+						DoMethod(d->App, MUIM_Application_PushMethod, (IPTR)vc->Obj, 2, vc->Method, (IPTR)e);
 					}
+
+					Remove((struct Node*)vc);
+					FreeVec(vc->Id);
+					FreeMem(vc, sizeof(struct VCardListNode));
+					break;
 				}
+			}
 
-				if((photo = iks_find(card, "PHOTO")))
+			if((photo = iks_find(card, "PHOTO")))
+			{
+				char *binval;
+
+				if((binval = iks_find_cdata(photo, "BINVAL")))
 				{
-					char *binval;
+					char *decoded;
+					size_t len;
 
-					if((binval = iks_find_cdata(photo, "BINVAL")))
+					if((decoded = iks_base64_decode(binval, &len)))
 					{
-						char *decoded;
-						size_t len;
+						BPTR fh;
+						iksha *sha;
+						UBYTE buffer[80];
+						struct Picture *av;
+						QUAD q;
 
-						if((decoded = iks_base64_decode(binval, &len)))
+						FmtNPut(buffer, CACHE_AVATARS_DIR, sizeof(buffer));
+
+						if((sha = iks_sha_new()))
 						{
-							BPTR fh;
-							iksha *sha;
-							UBYTE buffer[80];
-							struct Picture *av;
-							QUAD q;
+							iks_sha_hash(sha, (const unsigned char*)decoded, len, 1);
+							iks_sha_print(sha, buffer + StrLen(CACHE_AVATARS_DIR));
+							iks_free(sha);
 
-							FmtNPut(buffer, CACHE_AVATARS_DIR, sizeof(buffer));
-
-							if((sha = iks_sha_new()))
+							if((fh = Open(buffer, MODE_NEWFILE)))
 							{
-								iks_sha_hash(sha, (const unsigned char*)decoded, len, 1);
-								iks_sha_print(sha, buffer + StrLen(CACHE_AVATARS_DIR));
-								iks_free(sha);
-
-								if((fh = Open(buffer, MODE_NEWFILE)))
-								{
-									FWrite(fh, decoded, len, 1);
-									Close(fh);
-								}
+								FWrite(fh, decoded, len, 1);
+								Close(fh);
 							}
-
-							q = len;
-
-							if((av = LoadPictureMemory(decoded, &q)))
-								AddNewAvatarEvent(&d->EventsList, pac->from->partial, av);
-
-							iks_free(decoded);
 						}
+
+						q = len;
+
+						if((av = LoadPictureMemory(decoded, &q)))
+							AddNewAvatarEvent(&d->EventsList, pac->from->partial, av);
+
+						iks_free(decoded);
 					}
 				}
 			}
 		}
 	}
+
 }
 
 VOID HandlePacket(struct ObjData *d, iks *node)
@@ -237,7 +189,8 @@ VOID HandlePacket(struct ObjData *d, iks *node)
 			break;
 
 			case IKS_PAK_IQ:
-				HandleIq(d, pac);
+				if(pac->subtype == IKS_TYPE_RESULT)
+					HandleIqResult(d, pac);
 			break;
 
 			case IKS_PAK_S10N:
@@ -255,7 +208,7 @@ VOID HandlePacket(struct ObjData *d, iks *node)
 int StreamHook(void *user_data, int type, iks *node)
 {
 	struct ObjData *d = (struct ObjData*)user_data;
-	int features = 0;
+	ENTER();
 
 	switch(type)
 	{
@@ -272,26 +225,55 @@ int StreamHook(void *user_data, int type, iks *node)
 		break;
 
 		case IKS_NODE_NORMAL:
-			if(iks_strcmp("stream:features", iks_name(node)) == 0)
+			if(d->State == STATE_CHECK_FEATURES)
 			{
-				features = iks_stream_features(node);
-				if(!iks_is_secure(d->StreamParser) && (features & IKS_STREAM_STARTTLS))
+				if(iks_strcmp("stream:features", iks_name(node)) == 0)
 				{
-					int start_tls_res = iks_start_tls(d->StreamParser);
-					if(start_tls_res != IKS_OK)
-						return start_tls_res;
+					d->ServerFeatures = iks_stream_features(node);
 
-					d->State = STATE_CONNECTING;
-					d->WantWrite = TRUE;
-					return IKS_OK;
+					if(d->Authorized == FALSE)
+					{
+						if(!iks_is_secure(d->StreamParser) && (d->ServerFeatures & IKS_STREAM_STARTTLS))
+							STATE_CHANGE(STATE_START_TLS, FALSE, TRUE);
+						else
+							STATE_CHANGE(STATE_SEND_AUTHORIZATION, FALSE, TRUE);
+					}
+					else
+					{
+						if(d->ServerFeatures & IKS_STREAM_BIND)
+							STATE_CHANGE(STATE_BIND_STREAM, FALSE, TRUE);
+						else
+							STATE_CHANGE(STATE_CONNECTED, TRUE, FALSE);
+					}
 				}
 			}
-			if(d->State == STATE_AFTER_HEADER)
-				HandleFeatures(d, features, node);
-			if(d->State == STATE_CONNECTED)
+			else if(d->State == STATE_AUTHORIZATION_CONFIRMATION)
+			{
+				if(iks_strcmp("success", iks_name(node)) == 0)
+				{
+					d->Authorized = TRUE;
+					STATE_CHANGE(STATE_GET_AUTHORIZED_FEATURES, FALSE, TRUE);
+				}
+				else
+					AddErrorEvent(&d->EventsList, ERRNO_LOGIN_FAILED, iks_name(node));
+			}
+			if(d->State == STATE_CHECK_STREAM_BIND)
+			{
+				ikspak *pac = iks_packet(node);
+				if(pac && pac->type == IKS_PAK_IQ && pac->subtype == IKS_TYPE_RESULT && iks_strcmp(pac->id, "session-bind") == 0)
+				{
+					const char *jid = iks_find_cdata(iks_child(pac->x), "jid");
+					if(jid)
+						d->Id = iks_id_new(d->IksStack, jid);
+					STATE_CHANGE(STATE_CONNECTED, TRUE, FALSE);
+					AddEvent(&d->EventsList, KE_TYPE_CONNECT);
+				}
+			}
+			else if(d->State == STATE_CONNECTED)
 				HandlePacket(d, node);
 	}
 
+	LEAVE();
 	return IKS_OK;
 }
 

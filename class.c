@@ -8,6 +8,7 @@
 #include <kwakwa_api/protocol.h>
 #include <libvstring.h>
 #include <mui/PowerTerm_mcc.h>
+#include <openssl/ssl.h>
 #include "iksemel/iksemel.h"
 #include "class.h"
 #include "gui.h"
@@ -16,7 +17,7 @@
 #include "ikshooks.h"
 
 extern struct Library *SysBase, *DOSBase, *IntuitionBase, *UtilityBase;
-struct Library *SocketBase, *CyaSSLBase;
+struct Library *SocketBase, *OpenSSL3Base;
 
 static inline enum ikshowtype StatusTranslateToXMPP(ULONG ks)
 {
@@ -49,11 +50,14 @@ static IPTR mNew(Class *cl, Object *obj, struct opSet *msg)
 
 			if((SocketBase = OpenLibrary("bsdsocket.library", 0)))
 			{
-				if((CyaSSLBase = OpenLibrary("cyassl.library", 0)))
+				if((OpenSSL3Base = OpenLibrary("openssl3.library", 2)))
 				{
+					SSL_library_init();
+					OpenSSL_add_all_algorithms();
+					SSL_load_error_strings();
 					if((d->PrefsPanel = CreatePrefsPage()))
 					{
-						if((d->IksStack = iks_stack_new(0, 1024)))
+						if((d->IksStack = iks_stack_new(1024, 1024)))
 						{
 							BPTR avatars_dir;
 							LONG amake_res;
@@ -126,17 +130,17 @@ static IPTR mDispose(Class *cl, Object *obj, Msg msg)
 		iks_stack_delete(d->IksStack);
 
 	if(d->DescriptionOnConnect)
-	{
 		StrFree(d->DescriptionOnConnect);
-		d->DescriptionOnConnect = NULL; /* memory freed, ptr no longer valid */
-	}
+
+	if(d->Password)
+		StrFree(d->Password);
 
 #ifdef __DEBUG__
 	DoMethod(d->DebugLog, MUIM_PowerTerm_SaveStyle, (IPTR)"RAM:jabber.module.log");
 #endif /* __DEBUG__ */
 
-	if(CyaSSLBase)
-		CloseLibrary(CyaSSLBase);
+	if(OpenSSL3Base)
+		CloseLibrary(OpenSSL3Base);
 
 	if(SocketBase)
 		CloseLibrary(SocketBase);
@@ -172,7 +176,7 @@ static IPTR mGet(Class *cl, Object *obj, struct opGet *msg)
 		return TRUE;
 
 		case KWAA_WantRead:
-			*msg->opg_Storage = (ULONG)TRUE; /* we always want to read */
+			*msg->opg_Storage = (ULONG)d->WantRead;
 		return TRUE;
 
 		case KWAA_WantWrite:
@@ -193,59 +197,60 @@ static IPTR mConnect(Class *cl, Object *obj, struct KWAP_Connect *msg)
 	struct ObjData *d = INST_DATA(cl, obj);
 	BOOL result = FALSE;
 	STRPTR usr = (STRPTR)xget(findobj(USD_PREFS_BASIC_ID_STRING, d->PrefsPanel), MUIA_String_Contents);
+	STRPTR pass = (STRPTR)xget(findobj(USD_PREFS_BASIC_PASS_STRING, d->PrefsPanel), MUIA_String_Contents);
 	ENTER();
 
-	if(usr)
+	if(usr && pass)
 	{
-		if((d->Id = iks_id_new(d->IksStack, usr)))
+		if((d->Password = StrNew(pass)))
 		{
-			if((d->StreamParser = iks_stream_new(IKS_NS_CLIENT, d, StreamHook)))
+			if((d->Id = iks_id_new(d->IksStack, usr)))
 			{
-				LONG ret;
-				LONG port = -1;
-				STRPTR server = NULL;
-
-				iks_set_log_hook(d->StreamParser, DebugHook);
-
-				if(!d->Id->resource)
-					d->Id->resource = "KwaKwa";
-
-				if(xget(findobj(USD_PREFS_CONNECTION_ADVANCED, d->PrefsPanel), MUIA_Selected) == (ULONG)TRUE)
+				if((d->StreamParser = iks_stream_new(IKS_NS_CLIENT, d, StreamHook)))
 				{
-					Object *port_str = findobj(USD_PREFS_CONNECTION_PORT, d->PrefsPanel);
+					LONG ret;
+					LONG port = -1;
+					STRPTR server = NULL;
 
-					if(StrLen((STRPTR)xget(port_str, MUIA_String_Contents)))
-						port = xget(port_str, MUIA_String_Integer);
+					iks_set_log_hook(d->StreamParser, DebugHook);
 
-					server = (STRPTR)xget(findobj(USD_PREFS_CONNECTION_SERVER, d->PrefsPanel), MUIA_String_Contents);
-					if(StrLen(server) == 0)
-						server = NULL;
+					if(xget(findobj(USD_PREFS_CONNECTION_ADVANCED, d->PrefsPanel), MUIA_Selected) == (ULONG)TRUE)
+					{
+						Object *port_str = findobj(USD_PREFS_CONNECTION_PORT, d->PrefsPanel);
+
+						if(StrLen((STRPTR)xget(port_str, MUIA_String_Contents)))
+							port = xget(port_str, MUIA_String_Integer);
+
+						server = (STRPTR)xget(findobj(USD_PREFS_CONNECTION_SERVER, d->PrefsPanel), MUIA_String_Contents);
+						if(StrLen(server) == 0)
+							server = NULL;
+					}
+
+					switch((ret = iks_connect_async(d->StreamParser, d->Id->server, port == -1 ? IKS_JABBER_PORT : port, NULL, NULL, server)))
+					{
+						case IKS_OK:
+							d->State = STATE_CONNECTING;
+							d->WantWrite = TRUE;
+							d->StatusOnConnect = StatusTranslateToXMPP(msg->Status);
+							d->DescriptionOnConnect = StrNew(msg->Description);
+							result = TRUE;
+						break;
+
+						case IKS_NET_NODNS:
+						case IKS_NET_NOCONN:
+						case IKS_NET_NOSOCK:
+							AddErrorEvent(&d->EventsList, ERRNO_CONNECTION_FAILED, NULL);
+
+						default:
+							tprintf("iks_connect_async() error %ld!\n", ret);
+					}
 				}
-
-				switch((ret = iks_connect_async(d->StreamParser, d->Id->server, port == -1 ? IKS_JABBER_PORT : port, NULL, NULL, server)))
-				{
-					case IKS_OK:
-						d->State = STATE_CONNECTING;
-						d->WantWrite = TRUE;
-						d->StatusOnConnect = StatusTranslateToXMPP(msg->Status);
-						d->DescriptionOnConnect = StrNew(msg->Description);
-						result = TRUE;
-					break;
-
-					case IKS_NET_NODNS:
-					case IKS_NET_NOCONN:
-					case IKS_NET_NOSOCK:
-						AddErrorEvent(&d->EventsList, ERRNO_CONNECTION_FAILED, NULL);
-
-					default:
-						tprintf("iks_connect_async() error %ld!\n", ret);
-				}
+				else
+					AddErrorEvent(&d->EventsList, ERRNO_OUT_OF_MEMORY, NULL);
 			}
 			else
-				AddErrorEvent(&d->EventsList, ERRNO_OUT_OF_MEMORY, NULL);
+				AddErrorEvent(&d->EventsList, ERRNO_LOGIN_FAILED, NULL);
 		}
-		else
-			AddErrorEvent(&d->EventsList, ERRNO_LOGIN_FAILED, NULL);
 	}
 	else
 		AddErrorEvent(&d->EventsList, ERRNO_LOGIN_FAILED, NULL);
@@ -268,13 +273,18 @@ static IPTR mDisconnect(Class *cl, Object *obj, struct KWAP_Disconnect *msg)
 	}
 
 	d->Authorized = FALSE;
-	d->WantWrite = FALSE;
-	d->State = STATE_NOT_CONNECTED;
+	STATE_CHANGE(STATE_NOT_CONNECTED, FALSE, FALSE);
 
 	if(d->DescriptionOnConnect)
 	{
 		StrFree(d->DescriptionOnConnect);
 		d->DescriptionOnConnect = NULL; /* memory freed, ptr no longer valid */
+	}
+
+	if(d->Password)
+	{
+		StrFree(d->Password);
+		d->Password = NULL; /* memory freed, ptr no longer valid */
 	}
 
 	AddEvent(&d->EventsList, KE_TYPE_DISCONNECT);
@@ -286,22 +296,84 @@ static IPTR mDisconnect(Class *cl, Object *obj, struct KWAP_Disconnect *msg)
 static IPTR mWatchEvents(Class *cl, Object *obj, struct KWAP_WatchEvents *msg)
 {
 	struct ObjData *d = INST_DATA(cl, obj);
+	iks *t;
 
 	if(msg->CanWrite)
 	{
 		switch(d->State)
 		{
 			case STATE_CONNECTING:
-				if(iks_send_header(d->StreamParser, d->Id->server) == IKS_OK)
-					d->State = STATE_AFTER_HEADER;
-				d->WantWrite = FALSE;
+				if(iks_connect_async_complete(d->StreamParser) != IKS_OK)
+				{
+					AddErrorEvent(&d->EventsList, ERRNO_CONNECTION_FAILED, "Failed to connect");
+					return (IPTR)&d->EventsList;
+				}
+				STATE_CHANGE(STATE_CHECK_FEATURES, TRUE, FALSE);
+			break;
+
+			case STATE_START_TLS:
+				if(iks_start_tls(d->StreamParser) != IKS_OK)
+				{
+					AddErrorEvent(&d->EventsList, ERRNO_CONNECTION_FAILED, "Failed to start TLS");
+					return (IPTR)&d->EventsList;
+				}
+				STATE_CHANGE(STATE_SSL_HANDSHAKE, TRUE, FALSE);
+			break;
+
+			case STATE_SEND_AUTHORIZATION:
+				if((d->ServerFeatures & IKS_STREAM_SASL_PLAIN) && iks_is_secure(d->StreamParser))
+					iks_start_sasl(d->StreamParser, IKS_SASL_PLAIN, d->Id->user, d->Password); // TODO: check errors
+				else if(d->ServerFeatures & IKS_STREAM_SASL_MD5)
+					iks_start_sasl(d->StreamParser, IKS_SASL_DIGEST_MD5, d->Id->user, d->Password); // TODO: check errors
+
+				STATE_CHANGE(STATE_AUTHORIZATION_CONFIRMATION, TRUE, FALSE);
+			break;
+
+			case STATE_GET_AUTHORIZED_FEATURES:
+				if(iks_send_header(d->StreamParser, d->Id->server) != IKS_OK)
+				{
+					AddErrorEvent(&d->EventsList, ERRNO_CONNECTION_FAILED, "Failed to refresh server features set");
+					return (IPTR)&d->EventsList;
+				}
+				STATE_CHANGE(STATE_CHECK_FEATURES, TRUE, FALSE);
+			break;
+
+			case STATE_BIND_STREAM:
+				if((t = iks_make_resource_bind(d->Id)))
+				{
+					if(iks_send(d->StreamParser, t) != IKS_OK)
+					{
+						iks_delete(t);
+						AddErrorEvent(&d->EventsList, ERRNO_CONNECTION_FAILED, "Failed to refresh server features set");
+						return (IPTR)&d->EventsList;
+					}
+					STATE_CHANGE(STATE_CHECK_STREAM_BIND, TRUE, FALSE);
+					iks_delete(t);
+				}
+				else
+				{
+					AddErrorEvent(&d->EventsList, ERRNO_OUT_OF_MEMORY, "Failed to create resource bind stanza");
+					return (IPTR)&d->EventsList;
+				}
 			break;
 		}
 	}
 
 	if(msg->CanRead)
+	{
 		if(iks_recv(d->StreamParser, 0) != IKS_OK)
-			AddErrorEvent(&d->EventsList, ERRNO_CONNECTION_FAILED, "Recv failed");
+		{
+			AddErrorEvent(&d->EventsList, ERRNO_CONNECTION_FAILED, "Connection Lost");
+			return (IPTR)&d->EventsList;
+		}
+
+		switch(d->State)
+		{
+			case STATE_SSL_HANDSHAKE:
+				STATE_CHANGE(STATE_CHECK_FEATURES, TRUE, FALSE);
+			break;
+		}
+	}
 
 	return (IPTR)&d->EventsList;
 }

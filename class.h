@@ -17,8 +17,18 @@
 
 #define STATE_NOT_CONNECTED 0
 #define STATE_CONNECTING 1
-#define STATE_AFTER_HEADER 2
-#define STATE_CONNECTED 3
+#define STATE_CHECK_FEATURES 2
+#define STATE_START_TLS 3
+#define STATE_SSL_HANDSHAKE 4
+#define STATE_SEND_AUTHORIZATION 5
+#define STATE_AUTHORIZATION_CONFIRMATION 6
+#define STATE_GET_AUTHORIZED_FEATURES 7
+#define STATE_BIND_STREAM 8
+#define STATE_CHECK_STREAM_BIND 9
+
+#define STATE_CONNECTED 100
+
+#define STATE_CHANGE(NEW_STATE, READ, WRITE) do { d->State = NEW_STATE; d->WantRead = READ, d->WantWrite = WRITE; }while(0)
 
 struct VCardListNode
 {
@@ -37,13 +47,18 @@ struct ObjData
 	struct MinList EventsList;
 	struct MinList VCardList;
 	iksparser *StreamParser;
-	iksid *Id;
 	ikstack *IksStack;
+
 	ULONG State;
-	BOOL WantWrite;
+	BOOL WantWrite, WantRead;
+	ULONG ServerFeatures;
+
 	BOOL Authorized;
+
 	enum ikshowtype StatusOnConnect;
 	STRPTR DescriptionOnConnect;
+	iksid *Id;
+	STRPTR Password;
 };
 
 /* don't touch enything below this comment, unless you really know what you are doing... */

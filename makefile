@@ -44,7 +44,7 @@ LD = ppc-morphos-gcc-11
 LWARNS =
 LDEFS  =
 LFLAGS = -noixemul -nostdlib -nostartfiles
-LIBS   = -Liksemel -liksemel -labox -lvstring
+LIBS   = -Liksemel -liksemel -labox -lvstring -lssl_shared -lcrypto_shared
 # -ldebug
 
 LINK   = $(LD) $(TARGET) $(LWARNS) $(LDEFS) $(LFLAGS)
