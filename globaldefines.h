@@ -36,6 +36,10 @@
 #define UNUSED __attribute__((unused))
 
 #define CACHE_DIR "PROGDIR:cache/jabber.module/"
+#define CACHE_DIR_LEN 28
 #define CACHE_AVATARS_DIR CACHE_DIR "avatars/"
+#define CACHE_AVATARS_DIR_LEN (CACHE_DIR_LEN + 8)
+
+#define SHA_1_STR_LEN 40
 
 #endif /* __GLOBALDEFINES_H__ */

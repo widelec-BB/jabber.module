@@ -35,7 +35,7 @@ static VOID HandlePresence(struct ObjData *d, ikspak *pac)
 			if((avatar = iks_find_cdata(x, "photo")))
 			{
 				struct Picture *pic;
-				UBYTE buffer[80];
+				UBYTE buffer[CACHE_AVATARS_DIR_LEN + SHA_1_STR_LEN + 1];
 
 				FmtNPut(buffer, CACHE_AVATARS_DIR"%ls", sizeof(buffer), avatar);
 
@@ -61,8 +61,9 @@ static VOID HandlePresence(struct ObjData *d, ikspak *pac)
 				}
 				else
 					AddNewAvatarEvent(&d->EventsList, pac->from->partial, pic);
-
 			}
+			else
+				AddNewAvatarEvent(&d->EventsList, pac->from->partial, NULL);
 		}
 	}
 
@@ -138,7 +139,7 @@ VOID HandleIqResult(struct ObjData *d, ikspak *pac)
 					{
 						BPTR fh;
 						iksha *sha;
-						UBYTE buffer[80];
+						UBYTE buffer[CACHE_AVATARS_DIR_LEN + SHA_1_STR_LEN + 1];
 						struct Picture *av;
 						QUAD q;
 
