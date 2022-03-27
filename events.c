@@ -18,7 +18,7 @@ extern struct Library *SysBase, *LocaleBase, *DOSBase;
 
 static inline ULONG ActTimeStamp(VOID)
 {
-	ULONG secs = 2 * 366 * 24 * 3600 + 6 * 365 * 24 * 3600;
+	ULONG secs = 0;
 	struct Locale *l;
 
 	if(LocaleBase && (l = OpenLocale(NULL)))
