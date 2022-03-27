@@ -70,6 +70,7 @@ static IPTR mNew(Class *cl, Object *obj, struct opSet *msg)
 								Object *debuglog_window, *debuglog_menu_item;
 								if((debuglog_window = CreateDebugLogWindow(&d->DebugLog, &debuglog_menu_item)))
 								{
+									static STRPTR used_classes[] = {"PowerTerm.mcc", NULL};
 									d->State = STATE_NOT_CONNECTED;
 
 									d->GuiTagList[0].ti_Tag = KWAG_PrefsPage;
@@ -84,8 +85,11 @@ static IPTR mNew(Class *cl, Object *obj, struct opSet *msg)
 									d->GuiTagList[3].ti_Tag = KWAG_ToolsEntry;
 									d->GuiTagList[3].ti_Data = (IPTR)debuglog_menu_item;
 
-									d->GuiTagList[4].ti_Tag = TAG_END;
-									d->GuiTagList[4].ti_Data = (IPTR)NULL;
+									d->GuiTagList[4].ti_Tag = KWAG_UsedClasses;
+									d->GuiTagList[4].ti_Data = (IPTR)used_classes;
+
+									d->GuiTagList[5].ti_Tag = TAG_END;
+									d->GuiTagList[5].ti_Data = (IPTR)NULL;
 
 									LEAVE();
 									return (IPTR)obj;

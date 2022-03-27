@@ -43,7 +43,7 @@ struct ObjData
 	Object *App;
 	Object *PrefsPanel;
 	Object *DebugLog;
-	struct TagItem GuiTagList[5];
+	struct TagItem GuiTagList[6];
 	struct MinList EventsList;
 	struct MinList VCardList;
 	iksparser *StreamParser;
