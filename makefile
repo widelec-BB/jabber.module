@@ -124,12 +124,12 @@ dump:
 
 dist: all
 ifeq ($(OS),MorphOS)
-	@rm -rf RAM:$(OUTFILE) RAM:$(OUTFILE).lha
-	@mkdir RAM:$(OUTFILE) >NIL:
-	@mkdir RAM:$(OUTFILE)/modules >NIL:
+	@-rm -rf RAM:$(OUTFILE) RAM:$(OUTFILE).lha
+	@mkdir -p RAM:$(OUTFILE)/modules >NIL:
 	@copy $(OUTDIR)$(OUTFILE) RAM:$(OUTFILE)/modules/$(OUTFILE) >NIL:
 	@copy $(OUTDIR)catalogs RAM:$(OUTFILE)/catalogs ALL >NIL:
-	@copy doc RAM:$(OUTFILE) ALL >NIL:
+	@copy doc/ RAM:$(OUTFILE) ALL >NIL:
+	@copy LICENSE RAM:$(OUTFILE) >NIL:
 	@strip --strip-unneeded --remove-section .comment RAM:$(OUTFILE)/modules/$(OUTFILE) >NIL:
 	@find RAM:$(OUTFILE) -name .svn -printf "\"%p\"\n" | xargs rm -rf
 	@MOSSYS:C/LHa a -r -a RAM:$(OUTFILE).lha RAM:$(OUTFILE)/ >NIL:
