@@ -60,6 +60,7 @@ Object* MUI_NewObjectM(char *classname, ...)
 static inline Object* StringLabel(STRPTR label, STRPTR preparse)
 {
 	Object *obj = MUI_NewObjectM(MUIC_Text,
+		MUIA_Unicode, TRUE,
 		MUIA_FramePhantomHoriz, TRUE,
 		MUIA_Frame, MUIV_Frame_String,
 		MUIA_Text_PreParse, (ULONG)preparse,
@@ -73,6 +74,7 @@ static inline Object* StringLabel(STRPTR label, STRPTR preparse)
 static inline Object* StringGadget(ULONG id)
 {
 	Object *obj = MUI_NewObjectM(MUIC_String,
+		MUIA_Unicode, TRUE,
 		MUIA_UserData, id,
 		MUIA_ObjectID, id,
 		MUIA_Frame, MUIV_Frame_String,
@@ -84,24 +86,10 @@ static inline Object* StringGadget(ULONG id)
 	return obj;
 }
 
-static inline Object* GfxButton(ULONG id, STRPTR pic, UBYTE control)
-{
-	Object *obj = MUI_NewObjectM(MUIC_Group,
-		MUIA_InputMode, MUIV_InputMode_RelVerify,
-		MUIA_UserData, id,
-		MUIA_ObjectID, id,
-		MUIA_ControlChar, (ULONG)control,
-		MUIA_Group_Child, (ULONG)MUI_NewObjectM(MUIC_Dtpic,
-			MUIA_Dtpic_Name, (ULONG)pic,
-		TAG_END),
-	TAG_END);
-
-	return obj;
-}
-
 static inline Object* NormalButton(STRPTR label, UBYTE control, LONG objid, ULONG weight)
 {
 	Object *obj = MUI_NewObjectM(MUIC_Text,
+		MUIA_Unicode, TRUE,
 		MUIA_Text_Contents, (ULONG)label,
 		MUIA_Text_PreParse, (ULONG)"\33c",
 		MUIA_Frame, MUIV_Frame_Button,
@@ -128,6 +116,7 @@ Object *CreatePrefsPage(VOID)
 	ENTER();
 
 	pass_string = 	MUI_NewObjectM(MUIC_String,
+		MUIA_Unicode, TRUE,
 		MUIA_ObjectID, USD_PREFS_BASIC_PASS_STRING,
 		MUIA_UserData, USD_PREFS_BASIC_PASS_STRING,
 		MUIA_Frame, MUIV_Frame_String,
@@ -137,12 +126,14 @@ Object *CreatePrefsPage(VOID)
 	TAG_END);
 
 	login_group = MUI_NewObjectM(MUIC_Group,
+		MUIA_Unicode, TRUE,
 		MUIA_Frame, MUIV_Frame_Group,
 		MUIA_FrameTitle, (ULONG)GetString(MSG_PREFS_BASIC),
 		MUIA_Background, MUII_GroupBack,
 		MUIA_Group_Columns, 2,
 		MUIA_Group_Child, (ULONG)StringLabel(GetString(MSG_PREFS_BASIC_ID), "\33r"),
 		MUIA_Group_Child, (ULONG)MUI_NewObjectM(MUIC_String,
+			MUIA_Unicode, TRUE,
 			MUIA_ObjectID, USD_PREFS_BASIC_ID_STRING,
 			MUIA_UserData, USD_PREFS_BASIC_ID_STRING,
 			MUIA_Frame, MUIV_Frame_String,
@@ -156,6 +147,7 @@ Object *CreatePrefsPage(VOID)
 	TAG_END);
 
 	conn_group = MUI_NewObjectM(MUIC_Group,
+			MUIA_Unicode, TRUE,
 			MUIA_Frame, MUIV_Frame_Group,
 			MUIA_FrameTitle, (ULONG)GetString(MSG_PREFS_CONNECTION),
 			MUIA_Background, MUII_GroupBack,
@@ -163,6 +155,7 @@ Object *CreatePrefsPage(VOID)
 			MUIA_Group_Child, (IPTR)MUI_NewObjectM(MUIC_Group,
 				MUIA_Group_Horiz, TRUE,
 				MUIA_Group_Child, (IPTR)MUI_NewObjectM(MUIC_Image,
+					MUIA_Unicode, TRUE,
 					MUIA_ObjectID, USD_PREFS_CONNECTION_ADVANCED,
 					MUIA_UserData, USD_PREFS_CONNECTION_ADVANCED,
 					MUIA_Image_Spec, (IPTR)"6:15",
@@ -181,6 +174,7 @@ Object *CreatePrefsPage(VOID)
 					MUIA_Group_Horiz, TRUE,
 					MUIA_Group_Child, (ULONG)StringLabel(GetString(MSG_PREFS_CONNECTION_SERVER), "\33r"),
 					MUIA_Group_Child, (ULONG)MUI_NewObjectM(MUIC_String,
+						MUIA_Unicode, TRUE,
 						MUIA_ObjectID, USD_PREFS_CONNECTION_SERVER,
 						MUIA_UserData, USD_PREFS_CONNECTION_SERVER,
 						MUIA_Frame, MUIV_Frame_String,
@@ -195,6 +189,7 @@ Object *CreatePrefsPage(VOID)
 					MUIA_Group_Horiz, TRUE,
 					MUIA_Group_Child, (ULONG)StringLabel(GetString(MSG_PREFS_CONNECTION_PORT), "\33r"),
 					MUIA_Group_Child, (ULONG)MUI_NewObjectM(MUIC_String,
+						MUIA_Unicode, TRUE,
 						MUIA_ObjectID, USD_PREFS_CONNECTION_PORT,
 						MUIA_UserData, USD_PREFS_CONNECTION_PORT,
 						MUIA_Frame, MUIV_Frame_String,
@@ -229,6 +224,7 @@ Object *CreateDebugLogWindow(Object **term, Object **menu_item)
 	ENTER();
 
 	*menu_item = MUI_NewObjectM(MUIC_Menuitem,
+		MUIA_Unicode, TRUE,
 		MUIA_Menuitem_Title, (IPTR)GetString(MSG_MENU_DEBUGLOG_OPEN),
 	TAG_END);
 
@@ -247,11 +243,13 @@ Object *CreateDebugLogWindow(Object **term, Object **menu_item)
 			MUIA_Group_Child, MUI_NewObjectM(MUIC_Group,
 				MUIA_Group_Horiz, TRUE,
 				MUIA_Group_Child, MUI_NewObjectM(MUIC_Text,
+					MUIA_Unicode, TRUE,
 					MUIA_Text_Contents, (IPTR)GetString(MSG_DEBUGLOG_WINDOW_LEGEND_OUTGOING),
 					MUIA_Text_PreParse, "\33P[FF0000]\33l",
 				TAG_END),
 				MUIA_Group_Child, EmptyRectangle(100),
 				MUIA_Group_Child, MUI_NewObjectM(MUIC_Text,
+					MUIA_Unicode, TRUE,
 					MUIA_Text_Contents, (IPTR)GetString(MSG_DEBUGLOG_WINDOW_LEGEND_INCOMING),
 					MUIA_Text_PreParse, "\33P[00FF00]\33r",
 				TAG_END),

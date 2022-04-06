@@ -8,10 +8,10 @@
 #define __GLOBALDEFINES_H__
 
 #define CLASSNAME "jabber.module"
-#define VERSION 1
-#define REVISION 3
+#define VERSION 2
+#define REVISION 0
 #define DATE __AMIGADATE__
-#define VERS "jabber.module 1.3"
+#define VERS "jabber.module 2.0"
 #define AUTHOR "Filip \"widelec\" Maryjañski"
 #define DESC "Jabber Module for KwaKwa"
 #define COPYRIGHT "© " "2014 - 2022" " " AUTHOR

@@ -7,7 +7,7 @@
 ## TARGET CATALOG polski "bin/catalogs/polski" Optimize
 MSG_PREFS_BASIC
 User Settings
-Ustawienia u¿ytkownika
+Ustawienia uÅ¼ytkownika
 ;
 MSG_PREFS_BASIC_ID
 Jabber ID:
@@ -15,31 +15,31 @@ Jabber ID:
 ;
 MSG_PREFS_BASIC_PASS
 Password:
-Has³o:
+HasÅ‚o:
 ;
 MSG_PREFS_BASIC_ID_HELP
 Your Jabber ID, format: user@server.com.
-Twój Jabber ID w formacie u¿ytkownik@serwer.com.
+TwÃ³j Jabber ID w formacie uÅ¼ytkownik@serwer.com.
 ;
 MSG_PREFS_BASIC_PASS_HELP
 Your password.
-Twoje has³o.
+Twoje hasÅ‚o.
 ;
 MSG_PREFS_CONNECTION
 Connection Settings
-Ustawienia po³±czenia
+Ustawienia poÅ‚Ä…czenia
 ;
 MSG_PREFS_CONNECTION_ADVANCED_HELP
 Allows to set server addres and port number manually.
-Zaznacz, aby móc rêcznie zdefiniowaæ szczegó³y po³±czenia.
+Zaznacz, aby mÃ³c rÄ™cznie zdefiniowaÄ‡ szczegÃ³Å‚y poÅ‚Ä…czenia.
 ;
 MSG_PREFS_CONNECTION_ADVANCED
 Turn on advanced connection settings
-W³±cz zaawansowane ustawienia po³±czenia
+WÅ‚Ä…cz zaawansowane ustawienia poÅ‚Ä…czenia
 ;
 MSG_PREFS_CONNECTION_SERVER_HELP
 Address of server you want connect to.
-Adres serwera, z którym chcesz siê po³±czyæ.
+Adres serwera, z ktÃ³rym chcesz siÄ™ poÅ‚Ä…czyÄ‡.
 ;
 MSG_PREFS_CONNECTION_SERVER
 Server:
@@ -51,7 +51,7 @@ Port:
 ;
 MSG_PREFS_CONNECTION_PORT_HELP
 Server's port you want connect to.
-Port serwera, na którym chcesz siê po³±czyæ.
+Port serwera, na ktÃ³rym chcesz siÄ™ poÅ‚Ä…czyÄ‡.
 ;
 MSG_MENU_DEBUGLOG_OPEN
 Debug Log...
@@ -63,9 +63,9 @@ KwaKwa: Konsola debugowania Jabbera
 ;
 MSG_DEBUGLOG_WINDOW_LEGEND_OUTGOING
 Outgoing Data
-Dane wychodz±ce
+Dane wychodzÄ…ce
 ;
 MSG_DEBUGLOG_WINDOW_LEGEND_INCOMING
 Incoming Data
-Dane przychodz±ce
+Dane przychodzÄ…ce
 ;
